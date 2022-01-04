@@ -7,8 +7,6 @@
     
 \*----------------------------------------------------------------------------*/
 
-import $ from "jquery";
-
 export namespace SiteLoader {
 
     /**
@@ -16,13 +14,20 @@ export namespace SiteLoader {
      * @param selector
      */
     export function show(selector: string) {
-        if ($("#site-loader-" + selector.substr(1)).length === 0) {
-            $(selector).append("<div class=\"site-loader-backdrop load-in-container\" id=\"site-loader-" + selector.substr(1) + "\">" +
-                "<div class=\"site-loader-container\">" +
-                "<div class=\"site-loader\"></div>" +
-                "</div>" +
-                "</div>").addClass("overflow-hidden position-relative");
+        const loaderElement = document.getElementById(`site-loader-${selector.substr(1)}`);
+        if (typeof (loaderElement) != "undefined" && loaderElement != null) {
+            return;
         }
+
+        const selectorElement = document.querySelector(selector);
+        selectorElement.insertAdjacentHTML("beforeend",
+            "<div class=\"site-loader-backdrop load-in-container\" id=\"site-loader-" + selector.substr(1) + "\">" +
+                "<div class=\"site-loader-container\">" +
+                    "<div class=\"site-loader\"></div>" +
+                "</div>" +
+            "</div>");
+
+        selectorElement.classList.add("overflow-hidden position-relative");
     }
 
     /**
@@ -30,12 +35,13 @@ export namespace SiteLoader {
      * @param selector
      */
     export function remove(selector: string) {
-        if ($("#site-loader-" + selector.substr(1)).length) {
-            $("#site-loader-" + selector.substr(1)).remove();
+        const loaderElement = document.getElementById(`site-loader-${selector.substr(1)}`);
+        if (loaderElement) {
+            loaderElement.remove();
         }
 
         // Remove .overflow-hidden regardless as the loader maybe lost by the parents html being replaced.
-        $(selector).removeClass("overflow-hidden position-relative");
+        document.querySelector(selector).classList.remove("overflow-hidden position-relative");
     }
 
     /**
@@ -44,10 +50,10 @@ export namespace SiteLoader {
      */
     export function toggleGlobalLoader(show: boolean) {
         if (show) {
-            $("#loader-wrapper").removeClass("hidden");
+            document.getElementById("loader-wrapper").classList.remove("hidden");
         }
         else {
-            $("#loader-wrapper").addClass("hidden");
+            document.getElementById("loader-wrapper").classList.add("hidden");
         }
     }
 }

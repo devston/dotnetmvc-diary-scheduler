@@ -31,7 +31,6 @@ export namespace SiteCalendar {
             events: sourceUrl,
             selectable: true,
             select: function (info) {
-                console.log("click");
                 createFunc(info.start, info.end);
             }
         });

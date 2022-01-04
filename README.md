@@ -14,7 +14,6 @@ An ASP.Net Core 5 MVC diary scheduling app based on the domain-driven design con
 ## TODO:
 - Update projects to .net 6
 - Improve styling for account pages.
-- Remove jQuery
 - Add google calendar integration
 - Add Office 365 integration
 
@@ -22,5 +21,4 @@ An ASP.Net Core 5 MVC diary scheduling app based on the domain-driven design con
 
 - [fullcalendar](https://fullcalendar.io/)
 - [WebPack](https://webpack.js.org/)
-- [jQuery](https://jquery.com/)
 - [Autofac](https://autofac.org/)

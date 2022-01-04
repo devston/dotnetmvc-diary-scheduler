@@ -40,7 +40,6 @@
       <None Remove="Scripts\Components\site-loader.ts" />
       <None Remove="Scripts\Pages\main.ts" />
       <None Remove="Scripts\Pages\scheduler.ts" />
-      <None Remove="Scripts\Typings\jquery-typings.ts" />
     </ItemGroup>
 
   <ItemGroup>
@@ -68,7 +67,6 @@
     <TypeScriptCompile Include="Scripts\Components\site-loader.ts" />
     <TypeScriptCompile Include="Scripts\Pages\main.ts" />
     <TypeScriptCompile Include="Scripts\Pages\scheduler.ts" />
-    <TypeScriptCompile Include="Scripts\Typings\jquery-typings.ts" />
   </ItemGroup>
 
   <ItemGroup>

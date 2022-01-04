@@ -17,9 +17,7 @@
 \*----------------------------------------------------------------------------*/
 
 import * as bootstrap from "bootstrap";
-import $ from "jquery";
-import "jquery-validation";
-import "jquery-validation-unobtrusive";
+import { validationHandlers } from "unobtrusive-validation";
 import moment from "moment";
 import { SiteCalendar } from "./../Components/site-calendar";
 import { DateTimePicker } from "./../Components/site-datetimepicker";
@@ -36,13 +34,13 @@ export namespace Scheduler {
     \*------------------------------------------------------------------------*/
 
     const calendarSelector = "#calendar";
-    const mainContainer = "#scheduler-main-container";
+    const mainContainer = "scheduler-main-container";
 
     /**
      * Initialise scheduler area.
      */
     export function init() {
-        const pageToLoad = $(mainContainer).data("page-name");
+        const pageToLoad = document.getElementById(mainContainer).getAttribute("data-page-name");
 
         switch (pageToLoad) {
             case "modify":
@@ -62,10 +60,10 @@ export namespace Scheduler {
         const sourceUrl = (document.getElementById("CalendarSourceUrl") as HTMLInputElement).value;
         SiteCalendar.init(calendarSelector, sourceUrl, showQuickCreateModal, Navigate.toEdit);
 
-        $("#export-events-btn").on("click", function (e) {
+        document.getElementById("export-events-btn").onclick = function (e) {
             e.preventDefault();
             initExportModal();
-        });
+        };
     }
 
     /**
@@ -80,21 +78,23 @@ export namespace Scheduler {
         DateTimePicker.initDateTimeRange(startPickerSelector, endPickerSelector);
 
         // Form submit.
-        $("#edit-cal-entry-form").on("submit", function (e) {
+        const formEl = document.getElementById("edit-cal-entry-form") as HTMLFormElement;
+        formEl.onsubmit = function (e) {
             e.preventDefault();
-            saveEvent($(this));
-        });
+            saveEvent(formEl);
+        };
 
-        $("#export-event-btn").on("click", function (e) {
+        const exportBtnEl = document.getElementById("export-event-btn");
+        exportBtnEl.onclick = function (e) {
             e.preventDefault();
-            const url = $(this).data("url");
+            const url = exportBtnEl.dataset.url;
             exportEventToIcal(eventId, url);
-        });
+        };
 
-        $("#delete-entry-btn").on("click", function (e) {
+        document.getElementById("delete-entry-btn").onclick = function (e) {
             e.preventDefault();
             initDeleteModal(eventId);
-        });
+        };
     }
 
     /**
@@ -104,46 +104,49 @@ export namespace Scheduler {
         const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("export-events-modal"));
         const startPickerSelector = "#SyncFrom";
         const endPickerSelector = "#SyncTo";
-        let radioVal = "0";
+        let radioValue = "0";
 
         // Initialise the datetime pickers.
         DateTimePicker.initDateTimeRange(startPickerSelector, endPickerSelector);
 
         // Initialise the radio controls.
-        $("#calendar-sync-options-container").find("input[name=\"calsync\"]").off("change").on("change", function (this: HTMLInputElement) {
-            if (this.value == "1") {
-                $("#date-sync-container").addClass("hidden");
-                $("#calendar-sync-container").removeClass("hidden");
-            }
-            else {
-                $("#calendar-sync-container").addClass("hidden");
-                $("#date-sync-container").removeClass("hidden");
-            }
+        const radioControl = document.getElementById("calendar-sync-options-container").querySelectorAll("input[name=\"calsync\"]");
+        radioControl.forEach((element: HTMLInputElement) => {
+            element.onchange = function () {
+                if (element.value == "1") {
+                    document.getElementById("date-sync-container").classList.add("hidden");
+                    document.getElementById("calendar-sync-container").classList.remove("hidden");
+                }
+                else {
+                    document.getElementById("calendar-sync-container").classList.add("hidden");
+                    document.getElementById("date-sync-container").classList.remove("hidden");
+                }
 
-            radioVal = this.value;
+                radioValue = element.value;
+            }
         });
 
-        $("#confirm-export-btn").off("click").on("click", function (e) {
+        // Initialise the confirm button.
+        const confirmBtnElement = document.getElementById("confirm-export-btn");
+        confirmBtnElement.onclick = function initConfirmExportBtn(e) {
             e.preventDefault();
-
             // No value selected.
-            if (radioVal == "0") {
+            if (radioValue == "0") {
                 return;
             }
             else {
                 modal.hide();
 
-                if (radioVal == "1") {
+                if (radioValue == "1") {
                     exportVisibleEventsToIcal();
                 }
-                else if (radioVal == "2") {
+                else if (radioValue == "2") {
                     const start = (document.getElementById("SyncFrom") as HTMLInputElement).value;
                     const end = (document.getElementById("SyncTo") as HTMLInputElement).value;
                     exportEventsFromDateRangeToIcal(start, end);
                 }
             }
-        });
-
+        }
         modal.show();
     }
 
@@ -153,9 +156,9 @@ export namespace Scheduler {
     function initDeleteModal(eventId: string) {
         const modalEl = document.getElementById("confirm-delete-modal");
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-
-        $("#confirm-delete-btn").off("click").on("click", function (e) {
-            e.preventDefault();
+        const deleteBtnEl = document.getElementById("confirm-delete-btn");
+        deleteBtnEl.onclick = function (event) {
+            event.preventDefault();
 
             // Stop the modal from getting 'stuck'.
             modalEl.addEventListener("hidden.bs.modal", function () {
@@ -163,9 +166,20 @@ export namespace Scheduler {
             });
 
             modal.hide();
-        });
+        };
 
         modal.show();
+    }
+
+    function initDeleteModalDeleteBtn(event: MouseEvent, eventId: string, modalEl: HTMLElement, modal: bootstrap.Modal) {
+        event.preventDefault();
+
+        // Stop the modal from getting 'stuck'.
+        modalEl.addEventListener("hidden.bs.modal", function () {
+            deleteEvent(eventId);
+        });
+
+        modal.hide();
     }
 
     /*------------------------------------------------------------------------*\
@@ -176,112 +190,120 @@ export namespace Scheduler {
      *  Create a new calendar entry from the quick create modal.
      * */
     function quickCreate() {
-        // jQuery object is used multiple times so store it in a variable.
-        var $form = $("#quick-create-form");
+        const form = document.getElementById("quick-create-form") as HTMLFormElement;
         const createUrl = (document.getElementById("PostCreateEventUrl") as HTMLInputElement).value;
+        const editBtnEl = document.getElementById("edit-entry-btn");
+        const saveBtnEl = document.getElementById("quick-create-btn");
+        SiteLoader.toggleGlobalLoader(true);
+        editBtnEl.setAttribute("disabled", "");
+        saveBtnEl.setAttribute("disabled", "");
 
-        if ($form.valid()) {
-            $.ajax({
-                beforeSend: function () {
-                    SiteLoader.toggleGlobalLoader(true);
-                    $("#edit-entry-btn").attr("disabled");
-                    $("#quick-create-btn").attr("disabled");
-                },
-                url: createUrl,
-                type: "POST",
-                data: $form.serialize()
-            })
-                .always(function () {
-                    SiteLoader.toggleGlobalLoader(false);
-                    $("#edit-entry-btn").removeAttr("disabled");
-                    $("#quick-create-btn").removeAttr("disabled");
-                })
-                .done(function (data: any) {
-                    SiteCalendar.addEvent(data.calEntry, calendarSelector);
-                    SiteAlert.show("success", data.message, true);
-                    const modalEl = document.getElementById("quick-create-modal");
-                    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        fetch(createUrl, {
+            method: "post",
+            body: new FormData(form)
+        })
+        .then((response) => response.json())
+        .then(function (data: any) {
+            SiteLoader.toggleGlobalLoader(false);
+            editBtnEl.removeAttribute("disabled");
+            saveBtnEl.removeAttribute("disabled");
+            SiteCalendar.addEvent(data.calEntry, calendarSelector);
+            SiteAlert.show("success", data.message, true);
+            const modalEl = document.getElementById("quick-create-modal");
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
 
-                    modalEl.addEventListener("hidden.bs.modal", function () {
-                        $("#quick-create-container").empty();
-                    });
+            modalEl.addEventListener("hidden.bs.modal", function () {
+                $("#quick-create-container").empty();
+            });
 
-                    // Close and empty the modal.
-                    modal.hide();
-                })
-                .fail(function (jqXHR) {
-                    SiteAlert.showJqXhrError(jqXHR);
-                });
-        }
+            // Close and empty the modal.
+            modal.hide();
+        })
+        .catch((err) => {
+            SiteLoader.toggleGlobalLoader(false);
+            editBtnEl.removeAttribute("disabled");
+            saveBtnEl.removeAttribute("disabled");
+            SiteAlert.show("danger", err, true);
+        });
     }
 
     /**
      * Save a calendar event.
-     * @param formId
-     * @param url
+     * @param form
      */
-    function saveEvent($form: JQuery<HTMLElement>) {
-        const url = $form.data("url");
+    function saveEvent(form: HTMLFormElement) {
+        const url = form.dataset.url;
+        const saveBtnEl = document.getElementById("save-entry-btn");
+        const deleteBtnEl = document.getElementById("delete-entry-btn");
+        const backBtnEl = document.getElementById("back-to-cal-btn");
+        SiteLoader.toggleGlobalLoader(true);
+        saveBtnEl.setAttribute("disabled", "");
+        deleteBtnEl.setAttribute("disabled", "");
+        backBtnEl.setAttribute("disabled", "");
 
-        if ($form.valid()) {
-            $.ajax({
-                beforeSend: function () {
-                    SiteLoader.toggleGlobalLoader(true);
-                    $("#save-entry-btn").attr("disabled");
-                    $("#delete-entry-btn").attr("disabled");
-                    $("#back-to-cal-btn").attr("disabled");
-                },
-                url: url,
-                type: "POST",
-                data: $form.serialize()
-            }).always(function () {
-                SiteLoader.toggleGlobalLoader(false);
-                $("#save-entry-btn").removeAttr("disabled");
-                $("#delete-entry-btn").removeAttr("disabled");
-                $("#back-to-cal-btn").removeAttr("disabled");
-            })
-            .done(function (data: any) {
-                SiteAlert.show("success", data.message, true);
-                window.location.href = data.backUrl;
-            })
-            .fail(function (jqXHR) {
-                SiteAlert.showJqXhrError(jqXHR);
-            });
-        }
+        fetch(url, {
+            method: "post",
+            body: new FormData(form)
+        })
+        .then((response) => response.json())
+        .then(function (data: any) {
+            SiteLoader.toggleGlobalLoader(false);
+            saveBtnEl.removeAttribute("disabled");
+            deleteBtnEl.removeAttribute("disabled");
+            backBtnEl.removeAttribute("disabled");
+            SiteAlert.show("success", data.message, true);
+            window.location.href = data.backUrl;
+        })
+        .catch((err) => {
+            SiteLoader.toggleGlobalLoader(false);
+            saveBtnEl.removeAttribute("disabled");
+            deleteBtnEl.removeAttribute("disabled");
+            backBtnEl.removeAttribute("disabled");
+            SiteAlert.show("danger", err, true);
+        });
     }
 
     /**
      *  Delete a calendar event.
      * */
     function deleteEvent(eventId: string) {
-        const deleteUrl = $("#delete-entry-btn").data("url") as string;
-        const token = $("#edit-cal-entry-form").find("input[name=__RequestVerificationToken]").val() as string;
+        const deleteUrl = document.getElementById("delete-entry-btn").dataset.url;
+        const token = (document.getElementById("edit-cal-entry-form").querySelector("input[name=__RequestVerificationToken]") as HTMLInputElement).value;
+        const saveBtnEl = document.getElementById("save-entry-btn");
+        const deleteBtnEl = document.getElementById("delete-entry-btn");
+        const backBtnEl = document.getElementById("back-to-cal-btn");
+        const dataToSend = {
+            "id": eventId,
+            "__RequestVerificationToken": token
+        };
 
-        $.ajax({
-            beforeSend: function () {
-                SiteLoader.toggleGlobalLoader(true);
-                $("#save-entry-btn").attr("disabled");
-                $("#delete-entry-btn").attr("disabled");
-                $("#back-to-cal-btn").attr("disabled");
-            },
-            url: deleteUrl,
-            type: "POST",
-            data: {
-                "id": eventId,
-                "__RequestVerificationToken": token
+        SiteLoader.toggleGlobalLoader(true);
+        saveBtnEl.setAttribute("disabled", "");
+        deleteBtnEl.setAttribute("disabled", "");
+        backBtnEl.setAttribute("disabled", "");
+
+        fetch(deleteUrl, {
+            method: "post",
+            body: JSON.stringify(dataToSend),
+            headers: {
+                "Content-Type": "application/json"
             }
-        }).always(function () {
-            SiteLoader.toggleGlobalLoader(false);
-            $("#save-entry-btn").removeAttr("disabled");
-            $("#delete-entry-btn").removeAttr("disabled");
-            $("#back-to-cal-btn").removeAttr("disabled");
         })
-        .done(function (data: any) {
+        .then((response) => response.json())
+        .then(function (data: any) {
+            SiteLoader.toggleGlobalLoader(false);
+            saveBtnEl.removeAttribute("disabled");
+            deleteBtnEl.removeAttribute("disabled");
+            backBtnEl.removeAttribute("disabled");
             SiteAlert.show("success", data.message, true);
             window.location.href = data.backUrl;
         })
-        .fail(function (jqXHR) {
-            SiteAlert.showJqXhrError(jqXHR);
+        .catch((err) => {
+            SiteLoader.toggleGlobalLoader(false);
+            saveBtnEl.removeAttribute("disabled");
+            deleteBtnEl.removeAttribute("disabled");
+            backBtnEl.removeAttribute("disabled");
+            SiteAlert.show("danger", err, true);
         });
     }
 
@@ -302,7 +324,7 @@ export namespace Scheduler {
      * */
     function exportVisibleEventsToIcal() {
         // Check if there are any events before going to the controller.
-        if ($(".fc-view").has(".fc-event").length === 0) {
+        if (!document.querySelector(".fc-view").classList.contains("fc-event")) {
             SiteAlert.show("info", "There are no events to sync.", true);
             return;
         }
@@ -342,24 +364,27 @@ export namespace Scheduler {
         const startFormatted = start.toISOString();
         const endFormatted = end.toISOString();
 
-        // jQuery object is used multiple times so store it in a variable.
-        var $container = $("#quick-create-container");
-
         // Open create panel.
-        $container.load("/Scheduler/_QuickCreate/", { "start": startFormatted, "end": endFormatted }, function (_response: string, status: string) {
-            if (status == "success") {
+        fetch("/Scheduler/_QuickCreate/")
+            .then(function (response) {
+                return response.text();
+            })
+            .then(function (body) {
+                document.querySelector("#quick-create-container").innerHTML = body;
+
                 // Format date so it's human readable.
-                $("#DateStarting").val(moment(start).local().format("LLL"));
-                $("#DateEnding").val(moment(end).local().format("LLL"));
+                (document.getElementById("DateStarting") as HTMLInputElement).value = moment(start).local().format("LLL");
+                (document.getElementById("DateEnding") as HTMLInputElement).value = moment(end).local().format("LLL");
                 const modalEl = document.getElementById("quick-create-modal");
                 const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-                var $form = $("#quick-create-form");
+                const formEl = document.getElementById("quick-create-form") as HTMLFormElement;
 
                 // Show the modal.
                 modal.show();
 
                 // Show full create view.
-                $("#edit-entry-btn").off("click").on("click", function (event: JQueryEventObject) {
+                const editBtnEl = document.getElementById("edit-entry-btn");
+                editBtnEl.onclick = function (event) {
                     event.preventDefault();
 
                     SiteLoader.toggleGlobalLoader(true);
@@ -373,17 +398,16 @@ export namespace Scheduler {
 
                     // Close and empty the modal.
                     modal.hide();
-                });
+                };
 
                 // Submit form.
-                $form.off("submit").on("submit", function (event: JQueryEventObject) {
+                formEl.onsubmit = function (event) {
                     event.preventDefault();
                     quickCreate();
-                });
+                };
 
                 SiteLoader.toggleGlobalLoader(false);
-            }
-        });
+            });
     }
 
     /*------------------------------------------------------------------------*\
@@ -418,7 +442,7 @@ export namespace Scheduler {
     }
 }
 
-// Initialise the datatables demo module on page load.
-$(() => {
+// Initialise the scheduler module on page load.
+document.addEventListener("DOMContentLoaded", function (event) {
     Scheduler.init();
 });
