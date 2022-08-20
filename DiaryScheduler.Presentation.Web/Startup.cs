@@ -31,6 +31,7 @@ public class Startup
             .AddEntityFrameworkStores<ApplicationDbContext>();
         services.AddControllersWithViews();
         services.AddRazorPages();
+        services.AddDatabaseDeveloperPageExceptionFilter();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -39,7 +40,7 @@ public class Startup
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
-            app.UseDatabaseErrorPage();
+            app.UseMigrationsEndPoint();
         }
         else
         {
