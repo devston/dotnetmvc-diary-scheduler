@@ -1,6 +1,8 @@
 # ASP.Net Core MVC Diary Scheduler
 An ASP.Net Core 6 MVC diary scheduling app based on the domain-driven design concept. This makes use of ASP.Net Core 6 MVC, WebPack and fullcalendar.
 
+[![.NET](https://github.com/devston/dotnetmvc-diary-scheduler/actions/workflows/dotnet.yml/badge.svg)](https://github.com/devston/dotnetmvc-diary-scheduler/actions/workflows/dotnet.yml)
+
 # Getting Started:
 ## Prerequisites
 - [Visual Studio 2022](https://visualstudio.microsoft.com/) with ASP.Net/ web component and .Net 6.0 SDK installed.
