@@ -2,10 +2,10 @@
 using DiaryScheduler.Presentation.Services.Utility;
 using DiaryScheduler.ScheduleManagement.Core.Interfaces;
 using DiaryScheduler.ScheduleManagement.Core.Models;
+using FluentAssertions;
 using Moq;
 using Newtonsoft.Json;
 using NUnit.Framework;
-using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,8 +44,8 @@ public class SchedulerPresentationServiceTests
         var result = _schedulerPresentationService.CreateSchedulerCreateViewModel();
 
         // Assert
-        result.DateFrom.ShouldBe(expectedFromDate);
-        result.DateTo.ShouldBe(expectedToDate);
+        result.DateFrom.Should().Be(expectedFromDate);
+        result.DateTo.Should().Be(expectedToDate);
     }
 
     [Test]
@@ -60,9 +60,9 @@ public class SchedulerPresentationServiceTests
         var result = _schedulerPresentationService.CreateSchedulerCreateViewModel(expectedTitle, expectedFromDate, expectedToDate);
 
         // Assert
-        result.Title.ShouldBe(expectedTitle);
-        result.DateFrom.ShouldBe(expectedFromDate);
-        result.DateTo.ShouldBe(expectedToDate);
+        result.Title.Should().Be(expectedTitle);
+        result.DateFrom.Should().Be(expectedFromDate);
+        result.DateTo.Should().Be(expectedToDate);
     }
 
     [Test]
@@ -76,7 +76,7 @@ public class SchedulerPresentationServiceTests
         var result = _schedulerPresentationService.CreateSchedulerEditViewModel(eventId);
 
         // Assert
-        result.ShouldBeNull();
+        result.Should().BeNull();
     }
 
     [Test]
@@ -130,7 +130,7 @@ public class SchedulerPresentationServiceTests
         var convertedResult = JsonConvert.SerializeObject(result);
 
         // Assert
-        convertedResult.ShouldBe(convertedExpectedResult);
+        convertedResult.Should().Be(convertedExpectedResult);
     }
 
     [Test]
@@ -144,7 +144,7 @@ public class SchedulerPresentationServiceTests
         var result = _schedulerPresentationService.GenerateIcalForCalendarEvent(eventId);
 
         // Assert
-        result.ShouldBeNull();
+        result.Should().BeNull();
     }
 
     [Test]
@@ -169,9 +169,9 @@ public class SchedulerPresentationServiceTests
         var result = _schedulerPresentationService.GenerateIcalForCalendarEvent(eventId);
 
         // Assert
-        result.ContentType.ShouldBe(expectedContentType);
-        result.Data.ShouldNotBeNull();
-        result.FileName.Contains(".ics").ShouldBeTrue();
+        result.ContentType.Should().Be(expectedContentType);
+        result.Data.Should().NotBeNull();
+        result.FileName.Contains(".ics").Should().BeTrue();
     }
 
     [Test]
@@ -187,7 +187,7 @@ public class SchedulerPresentationServiceTests
         var result = _schedulerPresentationService.GenerateIcalBetweenDateRange(start, end, userId);
 
         // Assert
-        result.ShouldBeNull();
+        result.Should().BeNull();
     }
 
     [Test]
@@ -237,8 +237,8 @@ public class SchedulerPresentationServiceTests
         var result = _schedulerPresentationService.GenerateIcalBetweenDateRange(start, end, userId);
 
         // Assert
-        result.ContentType.ShouldBe(expectedContentType);
-        result.Data.ShouldNotBeNull();
-        result.FileName.Contains(".ics").ShouldBeTrue();
+        result.ContentType.Should().Be(expectedContentType);
+        result.Data.Should().NotBeNull();
+        result.FileName.Contains(".ics").Should().BeTrue();
     }
 }
