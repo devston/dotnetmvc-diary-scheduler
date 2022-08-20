@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System.Collections.Generic;
 
-namespace DiaryScheduler.Data.Models
+namespace DiaryScheduler.Data.Models;
+
+public class ApplicationUser : IdentityUser
 {
-    public class ApplicationUser : IdentityUser
-    {
-        public virtual ICollection<CalendarEvent> CalendarEntries { get; set; }
-    }
+    public virtual ICollection<CalendarEvent> CalendarEntries { get; set; }
 }
