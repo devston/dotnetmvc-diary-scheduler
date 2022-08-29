@@ -1,5 +1,7 @@
 ﻿using DiaryScheduler.Presentation.Models.Scheduler;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DiaryScheduler.Presentation.Services.Scheduler;
 
@@ -33,15 +35,17 @@ public interface ISchedulerPresentationService
     /// Create the edit variant of the <see cref="SchedulerModifyViewModel"/>.
     /// </summary>
     /// <param name="id">The calendar entry id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The <see cref="SchedulerModifyViewModel"/>.</returns>
-    SchedulerModifyViewModel CreateSchedulerEditViewModel(Guid id);
+    Task<SchedulerModifyViewModel> CreateSchedulerEditViewModelAsync(Guid id, CancellationToken cancellationToken);
 
     /// <summary>
     /// Check if a calendar event exists by event id.
     /// </summary>
     /// <param name="eventId">The calendar event id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A value indicating whether the calendar event exists.</returns>
-    bool CheckCalendarEventExists(Guid eventId);
+    Task<bool> CheckCalendarEventExistsAsync(Guid eventId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Get the calendar events for a user between a date range.
@@ -49,15 +53,17 @@ public interface ISchedulerPresentationService
     /// <param name="start">The start date.</param>
     /// <param name="end">The end date.</param>
     /// <param name="userId">The user id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The calendar events as an object.</returns>
-    object GetCalendarEventsForUserBetweenDateRange(DateTime start, DateTime end, string userId);
+    Task<object> GetCalendarEventsForUserBetweenDateRangeAsync(DateTime start, DateTime end, string userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Generate an ical file for a calendar event.
     /// </summary>
     /// <param name="id">The event id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The file data stored in <see cref="CalendarIcalViewModel"/>.</returns>
-    CalendarIcalViewModel GenerateIcalForCalendarEvent(Guid id);
+    Task<CalendarIcalViewModel> GenerateIcalForCalendarEventAsync(Guid id, CancellationToken cancellationToken);
 
     /// <summary>
     /// Generate an ical file between a date range.
@@ -65,26 +71,32 @@ public interface ISchedulerPresentationService
     /// <param name="start">The start date.</param>
     /// <param name="end">The end date.</param>
     /// <param name="userId">The user id to check events for.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The file data stored in <see cref="CalendarIcalViewModel"/>.</returns>
-    CalendarIcalViewModel GenerateIcalBetweenDateRange(DateTime start, DateTime end, string userId);
+    Task<CalendarIcalViewModel> GenerateIcalBetweenDateRangeAsync(DateTime start, DateTime end, string userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Create a calendar event.
     /// </summary>
     /// <param name="eventVm">The calendar entry to event.</param>
     /// <param name="userId">The user id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The event id.</returns>
-    Guid CreateCalendarEvent(CalendarEventViewModel eventVm, string userId);
+    Task<Guid> CreateCalendarEventAsync(CalendarEventViewModel eventVm, string userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Update a calendar event.
     /// </summary>
     /// <param name="eventVm">The event to update.</param>
-    void UpdateCalendarEvent(CalendarEventViewModel eventVm);
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The <see cref="Task"/>.</returns>
+    Task UpdateCalendarEventAsync(CalendarEventViewModel eventVm, CancellationToken cancellationToken);
 
     /// <summary>
     /// Delete a calendar event.
     /// </summary>
     /// <param name="id">The calendar event id.</param>
-    void DeleteCalendarEvent(Guid id);
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The <see cref="Task"/>.</returns>
+    Task DeleteCalendarEventAsync(Guid id, CancellationToken cancellationToken);
 }
