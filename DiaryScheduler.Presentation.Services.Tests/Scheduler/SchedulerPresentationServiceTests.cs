@@ -9,6 +9,8 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DiaryScheduler.Presentation.Services.Tests.Scheduler;
 
@@ -66,26 +68,28 @@ public class SchedulerPresentationServiceTests
     }
 
     [Test]
-    public void CreateSchedulerEditViewModel_GivenInvalidGuid_ReturnsNull()
+    public async Task CreateSchedulerEditViewModel_GivenInvalidGuid_ReturnsNull()
     {
         // Arrange
         var eventId = Guid.NewGuid();
-        _scheduleRepo.Setup(x => x.GetCalendarEvent(eventId)).Returns(() => null);
+        var cancellationToken = new CancellationToken();
+        _scheduleRepo.Setup(x => x.GetCalendarEventByIdAsync(eventId, cancellationToken)).ReturnsAsync(() => null);
 
         // Act
-        var result = _schedulerPresentationService.CreateSchedulerEditViewModel(eventId);
+        var result = await _schedulerPresentationService.CreateSchedulerEditViewModelAsync(eventId, cancellationToken);
 
         // Assert
         result.Should().BeNull();
     }
 
     [Test]
-    public void GetCalendarEventsForUserBetweenDateRange_GivenRequiredParameters_ReturnsConvertedEventCollection()
+    public async Task GetCalendarEventsForUserBetweenDateRange_GivenRequiredParameters_ReturnsConvertedEventCollection()
     {
         // Arrange
         var start = new DateTime(2022, 1, 1, 12, 15, 0);
         var end = new DateTime(2022, 3, 3, 12, 30, 0);
         var userId = "MrTest";
+        var cancellationToken = new CancellationToken();
         var userEvents = new List<CalEventDm>()
         {
             new CalEventDm()
@@ -122,10 +126,10 @@ public class SchedulerPresentationServiceTests
             allDay = x.AllDay
         });
         var convertedExpectedResult = JsonConvert.SerializeObject(expectedResult);
-        _scheduleRepo.Setup(x => x.GetAllUserEvents(userId, start, end)).Returns(userEvents);
+        _scheduleRepo.Setup(x => x.GetAllUserEventsAsync(userId, start, end, cancellationToken)).ReturnsAsync(userEvents);
 
         // Act
-        var result = _schedulerPresentationService.GetCalendarEventsForUserBetweenDateRange(start, end, userId);
+        var result = await _schedulerPresentationService.GetCalendarEventsForUserBetweenDateRangeAsync(start, end, userId, cancellationToken);
         // Convert the result to json so we can compare the contents match.
         var convertedResult = JsonConvert.SerializeObject(result);
 
@@ -134,24 +138,26 @@ public class SchedulerPresentationServiceTests
     }
 
     [Test]
-    public void GenerateIcalForCalendarEvent_GivenInvalidEventId_ReturnsNull()
+    public async Task GenerateIcalForCalendarEvent_GivenInvalidEventId_ReturnsNull()
     {
         // Arrange
         var eventId = Guid.NewGuid();
-        _scheduleRepo.Setup(x => x.GetCalendarEvent(eventId)).Returns(() => null);
+        var cancellationToken = new CancellationToken();
+        _scheduleRepo.Setup(x => x.GetCalendarEventByIdAsync(eventId, cancellationToken)).ReturnsAsync(() => null);
 
         // Act
-        var result = _schedulerPresentationService.GenerateIcalForCalendarEvent(eventId);
+        var result = await _schedulerPresentationService.GenerateIcalForCalendarEventAsync(eventId, cancellationToken);
 
         // Assert
         result.Should().BeNull();
     }
 
     [Test]
-    public void GenerateIcalForCalendarEvent_GivenValidEventId_ReturnsModelWithIcalData()
+    public async Task GenerateIcalForCalendarEvent_GivenValidEventId_ReturnsModelWithIcalData()
     {
         // Arrange
         var eventId = Guid.NewGuid();
+        var cancellationToken = new CancellationToken();
         var eventData = new CalEventDm()
         {
             CalendarEntryId = eventId,
@@ -162,11 +168,11 @@ public class SchedulerPresentationServiceTests
             DateTo = new DateTime(2022, 1, 1, 12, 30, 0),
             AllDay = false
         };
-        _scheduleRepo.Setup(x => x.GetCalendarEvent(eventId)).Returns(eventData);
+        _scheduleRepo.Setup(x => x.GetCalendarEventByIdAsync(eventId, cancellationToken)).ReturnsAsync(eventData);
         var expectedContentType = "text/calendar";
 
         // Act
-        var result = _schedulerPresentationService.GenerateIcalForCalendarEvent(eventId);
+        var result = await _schedulerPresentationService.GenerateIcalForCalendarEventAsync(eventId, cancellationToken);
 
         // Assert
         result.ContentType.Should().Be(expectedContentType);
@@ -175,28 +181,30 @@ public class SchedulerPresentationServiceTests
     }
 
     [Test]
-    public void GenerateIcalBetweenDateRange_GivenInvalidParameters_ReturnsNull()
+    public async Task GenerateIcalBetweenDateRange_GivenInvalidParameters_ReturnsNull()
     {
         // Arrange
         var start = new DateTime(2022, 1, 1, 12, 15, 0);
         var end = new DateTime(2022, 1, 1, 12, 30, 0);
+        var cancellationToken = new CancellationToken();
         var userId = "MrTestId";
-        _scheduleRepo.Setup(x => x.GetAllUserEvents(userId, start, end)).Returns(() => null);
+        _scheduleRepo.Setup(x => x.GetAllUserEventsAsync(userId, start, end, cancellationToken)).ReturnsAsync(() => null);
 
         // Act
-        var result = _schedulerPresentationService.GenerateIcalBetweenDateRange(start, end, userId);
+        var result = await _schedulerPresentationService.GenerateIcalBetweenDateRangeAsync(start, end, userId, cancellationToken);
 
         // Assert
         result.Should().BeNull();
     }
 
     [Test]
-    public void GenerateIcalBetweenDateRange_GivenValidParameters_ReturnsModelWithIcalData()
+    public async Task GenerateIcalBetweenDateRange_GivenValidParameters_ReturnsModelWithIcalData()
     {
         // Arrange
         var start = new DateTime(2022, 1, 1, 12, 15, 0);
         var end = new DateTime(2022, 1, 1, 12, 30, 0);
         var userId = "MrTestId";
+        var cancellationToken = new CancellationToken();
         var eventData = new List<CalEventDm>()
         {
             new CalEventDm()
@@ -231,10 +239,10 @@ public class SchedulerPresentationServiceTests
             }
         };
         var expectedContentType = "text/calendar";
-        _scheduleRepo.Setup(x => x.GetAllUserEvents(userId, start, end)).Returns(eventData);
+        _scheduleRepo.Setup(x => x.GetAllUserEventsAsync(userId, start, end, cancellationToken)).ReturnsAsync(eventData);
 
         // Act
-        var result = _schedulerPresentationService.GenerateIcalBetweenDateRange(start, end, userId);
+        var result = await _schedulerPresentationService.GenerateIcalBetweenDateRangeAsync(start, end, userId, cancellationToken);
 
         // Assert
         result.ContentType.Should().Be(expectedContentType);

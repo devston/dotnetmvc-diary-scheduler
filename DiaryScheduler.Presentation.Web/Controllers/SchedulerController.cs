@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DiaryScheduler.Presentation.Web.Controllers;
 
@@ -25,7 +27,7 @@ public class SchedulerController : Controller
     #region Views
 
     // GET: Scheduler
-    public ActionResult Index()
+    public IActionResult Index()
     {
         var vm = _schedulerPresentationService.CreateSchedulerIndexViewModel();
         vm = _schedulerUrlGenerationService.SetIndexUrls(vm);
@@ -33,7 +35,7 @@ public class SchedulerController : Controller
     }
 
     // GET: Create view.
-    public ActionResult Create()
+    public IActionResult Create()
     {
         var vm = _schedulerPresentationService.CreateSchedulerCreateViewModel();
         vm = _schedulerUrlGenerationService.SetCreateUrls(vm);
@@ -41,7 +43,7 @@ public class SchedulerController : Controller
     }
 
     // GET: Create view with filled in options.
-    public ActionResult CreateMoreOptions(string title, DateTime start, DateTime end)
+    public IActionResult CreateMoreOptions(string title, DateTime start, DateTime end)
     {
         var vm = _schedulerPresentationService.CreateSchedulerCreateViewModel(title, start, end);
         vm = _schedulerUrlGenerationService.SetCreateUrls(vm);
@@ -49,7 +51,7 @@ public class SchedulerController : Controller
     }
 
     // GET: Edit event view.
-    public ActionResult Edit(Guid id)
+    public async Task<IActionResult> Edit(Guid id, CancellationToken cancellationToken)
     {
         // Check if an id was sent.
         if (id == Guid.Empty)
@@ -57,7 +59,7 @@ public class SchedulerController : Controller
             return BadRequest("<strong>Error:</strong> Invalid calendar event id.");
         }
 
-        var vm = _schedulerPresentationService.CreateSchedulerEditViewModel(id);
+        var vm = await _schedulerPresentationService.CreateSchedulerEditViewModelAsync(id, cancellationToken);
 
         if (vm == null)
         {
@@ -69,7 +71,7 @@ public class SchedulerController : Controller
     }
 
     // GET: Quick create view.
-    public ActionResult _QuickCreate(DateTime start, DateTime end)
+    public IActionResult _QuickCreate(DateTime start, DateTime end)
     {
         var vm = new CalendarEventViewModel()
         {
@@ -86,7 +88,7 @@ public class SchedulerController : Controller
     // Create calendar event.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public ActionResult CreateEvent(CalendarEventViewModel vm)
+    public async Task<IActionResult> CreateEvent(CalendarEventViewModel vm, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
         {
@@ -101,7 +103,7 @@ public class SchedulerController : Controller
 
         // Save event.
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var id = _schedulerPresentationService.CreateCalendarEvent(vm, userId);
+        var id = await _schedulerPresentationService.CreateCalendarEventAsync(vm, userId, cancellationToken);
 
         // Return calendar record for fullCalendar.js.
         return Json(new
@@ -122,7 +124,7 @@ public class SchedulerController : Controller
     // Edit calendar event.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public ActionResult EditEvent(CalendarEventViewModel vm)
+    public async Task<IActionResult> EditEvent(CalendarEventViewModel vm, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
         {
@@ -136,13 +138,13 @@ public class SchedulerController : Controller
         }
 
         // Check if the calendar entry exists.
-        if (!_schedulerPresentationService.CheckCalendarEventExists(vm.CalendarEventId))
+        if (!await _schedulerPresentationService.CheckCalendarEventExistsAsync(vm.CalendarEventId, cancellationToken))
         {
             return BadRequest("<strong>Error:</strong> The calendar event could not be found.");
         }
 
         // Save event.
-        _schedulerPresentationService.UpdateCalendarEvent(vm);
+        await _schedulerPresentationService.UpdateCalendarEventAsync(vm, cancellationToken);
 
         return Json(new
         {
@@ -154,16 +156,16 @@ public class SchedulerController : Controller
     // Delete calendar event.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public ActionResult DeleteEvent(Guid id)
+    public async Task<IActionResult> DeleteEvent(Guid id, CancellationToken cancellationToken)
     {
         // Check if the calendar entry exists.
-        if (!_schedulerPresentationService.CheckCalendarEventExists(id))
+        if (!await _schedulerPresentationService.CheckCalendarEventExistsAsync(id, cancellationToken))
         {
             return BadRequest("<strong>Error:</strong> The calendar event could not be found.");
         }
 
         // Delete event.
-        _schedulerPresentationService.DeleteCalendarEvent(id);
+        await _schedulerPresentationService.DeleteCalendarEventAsync(id, cancellationToken);
 
         return Json(new
         {
@@ -177,10 +179,10 @@ public class SchedulerController : Controller
     #region Calendar Sources
 
     // GET: User calendar events.
-    public ActionResult UserEvents(DateTime start, DateTime end)
+    public async Task<IActionResult> UserEvents(DateTime start, DateTime end, CancellationToken cancellationToken)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var result = _schedulerPresentationService.GetCalendarEventsForUserBetweenDateRange(start, end, userId);
+        var result = await _schedulerPresentationService.GetCalendarEventsForUserBetweenDateRangeAsync(start, end, userId, cancellationToken);
         return Json(result);
     }
 
@@ -189,7 +191,7 @@ public class SchedulerController : Controller
     #region Export
 
     // Create a .ics file for a calendar event.
-    public ActionResult ExportEventToIcal(Guid id)
+    public async Task<IActionResult> ExportEventToIcal(Guid id, CancellationToken cancellationToken)
     {
         // Check if an id was sent.
         if (id == Guid.Empty)
@@ -197,7 +199,7 @@ public class SchedulerController : Controller
             return BadRequest("<strong>Error:</strong> Invalid calendar event id.");
         }
 
-        var fileData = _schedulerPresentationService.GenerateIcalForCalendarEvent(id);
+        var fileData = await _schedulerPresentationService.GenerateIcalForCalendarEventAsync(id, cancellationToken);
 
         if (fileData == null)
         {
@@ -208,7 +210,7 @@ public class SchedulerController : Controller
     }
 
     // Create a .ics file for calendar events from a date range.
-    public ActionResult ExportEventsToIcal(DateTime? start, DateTime? end)
+    public async Task<IActionResult> ExportEventsToIcal(DateTime? start, DateTime? end, CancellationToken cancellationToken)
     {
         // Check if dates are null before doing anything.
         if (!start.HasValue || !end.HasValue)
@@ -217,7 +219,7 @@ public class SchedulerController : Controller
         }
 
         var userId = User.Identity.Name;
-        var fileData = _schedulerPresentationService.GenerateIcalBetweenDateRange(start.Value, end.Value, userId);
+        var fileData = await _schedulerPresentationService.GenerateIcalBetweenDateRangeAsync(start.Value, end.Value, userId, cancellationToken);
 
         // Check if there are any diary entries to sync.
         if (fileData == null)

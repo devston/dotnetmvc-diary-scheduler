@@ -4,6 +4,8 @@ using DiaryScheduler.ScheduleManagement.Core.Interfaces;
 using DiaryScheduler.ScheduleManagement.Core.Models;
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DiaryScheduler.Presentation.Services.Scheduler;
 
@@ -53,9 +55,9 @@ public class SchedulerPresentationService : ISchedulerPresentationService
         return vm;
     }
 
-    public SchedulerModifyViewModel CreateSchedulerEditViewModel(Guid id)
+    public async Task<SchedulerModifyViewModel> CreateSchedulerEditViewModelAsync(Guid id, CancellationToken cancellationToken)
     {
-        var entry = _scheduleRepository.GetCalendarEvent(id);
+        var entry = await _scheduleRepository.GetCalendarEventByIdAsync(id, cancellationToken);
 
         if (entry == null)
         {
@@ -76,14 +78,14 @@ public class SchedulerPresentationService : ISchedulerPresentationService
         return vm;
     }
 
-    public bool CheckCalendarEventExists(Guid eventId)
+    public async Task<bool> CheckCalendarEventExistsAsync(Guid eventId, CancellationToken cancellationToken)
     {
-        return _scheduleRepository.DoesEventExist(eventId);
+        return await _scheduleRepository.DoesEventExistAsync(eventId, cancellationToken);
     }
 
-    public object GetCalendarEventsForUserBetweenDateRange(DateTime start, DateTime end, string userId)
+    public async Task<object> GetCalendarEventsForUserBetweenDateRangeAsync(DateTime start, DateTime end, string userId, CancellationToken cancellationToken)
     {
-        var userEvents = _scheduleRepository.GetAllUserEvents(userId, start, end);
+        var userEvents = await _scheduleRepository.GetAllUserEventsAsync(userId, start, end, cancellationToken);
 
         object result = userEvents.Select(x => new
         {
@@ -97,9 +99,9 @@ public class SchedulerPresentationService : ISchedulerPresentationService
         return result;
     }
 
-    public CalendarIcalViewModel GenerateIcalForCalendarEvent(Guid id)
+    public async Task<CalendarIcalViewModel> GenerateIcalForCalendarEventAsync(Guid id, CancellationToken cancellationToken)
     {
-        var entry = _scheduleRepository.GetCalendarEvent(id);
+        var entry = await _scheduleRepository.GetCalendarEventByIdAsync(id, cancellationToken);
 
         if (entry == null)
         {
@@ -120,10 +122,10 @@ public class SchedulerPresentationService : ISchedulerPresentationService
         return CreateCalendarIcalViewModelFromIcal(iCal);
     }
 
-    public CalendarIcalViewModel GenerateIcalBetweenDateRange(DateTime start, DateTime end, string userId)
+    public async Task<CalendarIcalViewModel> GenerateIcalBetweenDateRangeAsync(DateTime start, DateTime end, string userId, CancellationToken cancellationToken)
     {
         // Get user's calendar entries within the date range.
-        var userEntries = _scheduleRepository.GetAllUserEvents(userId, start, end);
+        var userEntries = await _scheduleRepository.GetAllUserEventsAsync(userId, start, end, cancellationToken);
 
         // Check if there are any diary entries to sync.
         if (userEntries == null)
@@ -148,27 +150,27 @@ public class SchedulerPresentationService : ISchedulerPresentationService
         return CreateCalendarIcalViewModelFromIcal(iCal);
     }
 
-    public Guid CreateCalendarEvent(CalendarEventViewModel eventVm, string userId)
+    public async Task<Guid> CreateCalendarEventAsync(CalendarEventViewModel eventVm, string userId, CancellationToken cancellationToken)
     {
         eventVm.UserId = userId;
         var calEvent = ConvertCalendarEventViewModelToDomainModel(eventVm);
 
         // Save event.
-        var id = _scheduleRepository.CreateCalendarEvent(calEvent);
+        var id = await _scheduleRepository.CreateCalendarEventAsync(calEvent, cancellationToken);
         return id;
     }
 
-    public void UpdateCalendarEvent(CalendarEventViewModel eventVm)
+    public async Task UpdateCalendarEventAsync(CalendarEventViewModel eventVm, CancellationToken cancellationToken)
     {
         var calEvent = ConvertCalendarEventViewModelToDomainModel(eventVm);
 
         // Save event.
-        _scheduleRepository.EditCalendarEvent(calEvent);
+        await _scheduleRepository.EditCalendarEventAsync(calEvent, cancellationToken);
     }
 
-    public void DeleteCalendarEvent(Guid id)
+    public async Task DeleteCalendarEventAsync(Guid id, CancellationToken cancellationToken)
     {
-        _scheduleRepository.DeleteCalendarEvent(id);
+        await _scheduleRepository.DeleteCalendarEventAsync(id, cancellationToken);
     }
 
     /// <summary>
